@@ -5,3 +5,5 @@ from dreamai.imports import *
 from langchain_ray.utils import *
 from langchain_ray.chains import *
 from langchain_ray.imports import *
+
+import pdfplumber

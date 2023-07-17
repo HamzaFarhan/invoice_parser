@@ -7,3 +7,4 @@ from langchain_ray.chains import *
 from langchain_ray.imports import *
 
 import pdfplumber
+from pypdf import PdfReader

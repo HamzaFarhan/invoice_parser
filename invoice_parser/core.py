@@ -2,12 +2,11 @@
 
 # %% auto 0
 __all__ = ['page_to_order', 'pdf_to_order', 'page_to_extra_info', 'pdf_to_info', 'pdf_to_dfs', 'load_csv_chain',
-           'pdf_to_dfs_chain']
+           'pdf_to_dfs_chain', 'page0_text', 'is_invoice_text', 'is_invoice', 'is_invoice_chain', 'conditional_chain']
 
 # %% ../nbs/01_core.ipynb 2
 from .imports import *
 from .utils import *
-
 
 # %% ../nbs/01_core.ipynb 4
 def page_to_order(
@@ -144,7 +143,9 @@ def pdf_to_dfs(pdf):
     return info_df, order_df
 
 
-def load_csv_chain(input_variables=["csv"], output_variables=["csv_data"], verbose=False):
+def load_csv_chain(
+    input_variables=["csv"], output_variables=["csv_data"], verbose=False
+):
     return transform_chain(
         load_csv,
         vars_kwargs_mapping={input_variables[0]: "path"},
@@ -164,3 +165,44 @@ def pdf_to_dfs_chain(
         output_variables=output_variables,
         verbose=verbose,
     )
+
+
+def page0_text(pdf):
+    loaded_pdf = PdfReader(pdf)
+    p = loaded_pdf.pages[0]
+    return p.extract_text()
+
+
+def is_invoice_text(text, model):
+    return model(text).detach().cpu().item() == 0
+
+
+def is_invoice(pdf, model, device=None):
+    if model is None:
+        model = load_invoice_model(device=device)
+    return is_invoice_text(page0_text(pdf), model)
+
+
+def is_invoice_chain(
+    model,
+    device=None,
+    input_variables=["pdf"],
+    output_variables=["is_invoice"],
+    verbose=False,
+):
+    return transform_chain(
+        is_invoice,
+        transform_kwargs={"model": model, "device": device},
+        vars_kwargs_mapping={input_variables[0]: "pdf"},
+        input_variables=input_variables,
+        output_variables=output_variables,
+        verbose=verbose,
+    )
+
+
+def conditional_chain(input, first_chain, next_chains, router):
+    first_output = first_chain(input)
+    chain_name = router(first_output)
+    next_chain = next_chains.get(chain_name, None)
+    return next_chain(first_output) if next_chain is not None else first_output
+

@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "invoice_parser"
+  site-url: "https://HamzaFarhan.github.io/invoice_parser"
+  description: "Tools for parsing and extracting information from invoices."
+  repo-branch: main
+  repo-url: "https://github.com/HamzaFarhan/invoice_parser"

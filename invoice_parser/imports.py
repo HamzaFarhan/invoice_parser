@@ -13,6 +13,7 @@ from ast import literal_eval
 from pyparsing import nestedExpr
 from collections import defaultdict
 from pydantic import BaseModel, Field
+from transformers import AutoModelForCausalLM
 from langchain.document_loaders import PDFPlumberLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_ray.pdf.utils import pdf_to_docs, process_text

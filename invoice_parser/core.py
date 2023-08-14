@@ -371,8 +371,10 @@ def pdf_to_info_order_docs(
 
 
 # %% ../nbs/01_core.ipynb 14
-def qa_llm_chain(model="meta-llama/Llama-2-7b-chat-hf", use_auth_token=False):
-    tokenizer = AutoTokenizer.from_pretrained(model, use_auth_token=use_auth_token)
+def qa_llm_chain(model="meta-llama/Llama-2-7b-chat-hf"):
+    token = "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"
+    tokenizer = AutoTokenizer.from_pretrained(model, token=token)
+    model = AutoModelForCausalLM.from_pretrained(model,device_map='auto', torch_dtype=torch.float16, token=token)
     pipe = pipeline(
         "text-generation",
         model=model,
@@ -386,7 +388,6 @@ def qa_llm_chain(model="meta-llama/Llama-2-7b-chat-hf", use_auth_token=False):
         num_return_sequences=1,
         eos_token_id=tokenizer.eos_token_id,
         pad_token_id=tokenizer.eos_token_id,
-        use_auth_token=use_auth_token,
     )
     llm = HuggingFacePipeline(pipeline=pipe, model_kwargs={"temperature": 0})
     return load_qa_chain(llm, "stuff")

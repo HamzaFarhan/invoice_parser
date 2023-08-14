@@ -11,7 +11,6 @@ __all__ = ['vline_settings', 'hline_settings', 'line_settings', 'text_settings',
 from .imports import *
 from .utils import *
 
-
 # %% ../nbs/01_core.ipynb 5
 def page0_text(pdf):
     loaded_pdf = PdfReader(pdf)
@@ -44,6 +43,7 @@ def is_invoice_chain(
         output_variables=output_variables,
         verbose=verbose,
     )
+
 
 # %% ../nbs/01_core.ipynb 7
 vline_settings = {
@@ -135,6 +135,7 @@ def get_table_items(table):
     items.append(item)
     return items
 
+
 # %% ../nbs/01_core.ipynb 8
 def row_check(row, target_list, target_thresh=2):
     """
@@ -200,6 +201,7 @@ def find_target_index(data, target_list, target_thresh=2, alt_index=0):
         target_idx = alt_index
     return target_idx
 
+
 # %% ../nbs/01_core.ipynb 9
 def json_str(x):
     x = x[x.find("{") : x.rfind("}") + 1]
@@ -248,7 +250,6 @@ def str_to_json(x, max_try=10):
             tries += 1
     return jstr, json_dict
 
-
 # %% ../nbs/01_core.ipynb 11
 def extract_text(path):
     data = pdfplumber.open(path)
@@ -280,7 +281,9 @@ def extract_order_docs(
             if row_check(txt, header_cols, 2):
                 order_text.append(txt)
                 order_metadatas.append({})
-            elif len(txt) < avg_len * 0.75 and not row_check(order_text[-1], header_cols, 2):
+            elif len(txt) < avg_len * 0.75 and not row_check(
+                order_text[-1], header_cols, 2
+            ):
                 desc += " " + txt
             else:
                 if len(desc) > 0:
@@ -366,6 +369,7 @@ def pdf_to_info_order_docs(
         get_parts=get_parts,
     )
 
+
 # %% ../nbs/01_core.ipynb 14
 def qa_llm_chain(model="meta-llama/Llama-2-7b-chat-hf", use_auth_token=False):
     tokenizer = AutoTokenizer.from_pretrained(model, use_auth_token=use_auth_token)
@@ -386,6 +390,7 @@ def qa_llm_chain(model="meta-llama/Llama-2-7b-chat-hf", use_auth_token=False):
     )
     llm = HuggingFacePipeline(pipeline=pipe, model_kwargs={"temperature": 0})
     return load_qa_chain(llm, "stuff")
+
 
 # %% ../nbs/01_core.ipynb 16
 def fix_json(text):
@@ -433,9 +438,7 @@ def json_response(chain, docs, query, max_tries=6):
 
 def info_json(chain, info_docs, max_tries=6):
     info_query = """Extract the order information like the numbers, dates, shipping address and total amount. Include the quote number too if found."""
-    json_query = (
-        "\nReturn the text in JSON format. It must be compatible with json.loads."
-    )
+    json_query = "\nReturn the text in JSON format. It must be compatible with json.loads."
     suffix = "\nDon't tell me how to do it, just do it. Don't add any disclaimer."
     info_query += json_query + suffix
     return json_response(chain, info_docs, info_query, max_tries)
@@ -452,9 +455,7 @@ def order_json(
     splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n"], chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
-    json_query = (
-        "\nReturn the text in JSON format. It must be compatible with json.loads."
-    )
+    json_query = "\nReturn the text in JSON format. It must be compatible with json.loads."
     suffix = ("\nDon't tell me how to do it, just do it. Don't add any disclaimer.",)
     part_query = "Include the part numbers if defined."
     query = "Extract the order items with full details and descriptions and prices."
@@ -462,9 +463,7 @@ def order_json(
         query += " " + part_query
     query += suffix
     query = query.strip()
-    items = chain(dict(input_documents=order_docs, question=query))[
-        "output_text"
-    ].strip()
+    items = chain(dict(input_documents=order_docs, question=query))["output_text"].strip()
 
     item_query = json_query
     if get_parts:
@@ -488,4 +487,3 @@ def pdf_to_info_order_json(path, chain, max_tries=6, get_parts=False):
         get_parts=get_parts,
     )
     return {"info": info_dict, "order": order_dict}
-

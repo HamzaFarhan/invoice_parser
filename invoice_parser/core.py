@@ -349,7 +349,7 @@ def info_order_docs(
         for t in text[bottom_idx:]
         if len(t.strip()) > 0
     ]
-    info_text = top_text + bottom_text
+    info_text = top_text + bottom_text[1:]
     all_info_text = " ".join(info_text)
     qns = [x for x in re.findall(r"\d{8}", all_info_text) if x.startswith("2")]
     if len(qns) > 0:
@@ -462,7 +462,7 @@ def json_response(chain, docs, query, max_tries=6):
 
 def info_json(chain, info_docs, max_tries=6):
     msg.info("Extracting INFO JSON.", spaced=True)
-    info_query = """Extract the order information like the numbers, dates, shipping address and total amount. Include the quote number too if found."""
+    info_query = """Extract the order information like the numbers, dates, and shipping address. Include the quote number too if found."""
     json_query = """\nReturn the text in JSON format. It must be compatible with json.loads."""
     suffix = """\nDon't tell me how to do it, just do it. Don't add any disclaimer."""
     info_query += json_query + suffix

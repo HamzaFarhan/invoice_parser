@@ -17,6 +17,7 @@ llm_chain = qa_llm_chain()
 def po_action(path: str):
     msg.info(f"Path: {path}", spaced=True)
     path, bucket_path = handle_input_path(path)
+    path = Path(path) / Path(bucket_path).name
     msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
     res = pdf_to_info_order_json(path, llm_chain, get_parts=True)
     res_json = {"info": res["info"]["json"], "order": res["order"]["json"]}
@@ -27,6 +28,7 @@ def po_action(path: str):
 def ap_action(path: str):
     msg.info(f"Path: {path}", spaced=True)
     path, bucket_path = handle_input_path(path)
+    path = Path(path) / Path(bucket_path).name
     msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
     res = pdf_to_info_order_json(path, llm_chain, get_parts=False)
     res_json = {"info": res["info"]["json"], "order": res["order"]["json"]}

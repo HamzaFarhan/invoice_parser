@@ -7,6 +7,7 @@ __all__ = ['part_check', 'row_check', 'empty_part', 'empty_row', 'full_row', 'ge
 # %% ../nbs/00_utils.ipynb 2
 from .imports import *
 
+
 # %% ../nbs/00_utils.ipynb 4
 def part_check(p, check=[]):
     return p in check

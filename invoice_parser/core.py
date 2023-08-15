@@ -462,12 +462,12 @@ def json_response(chain, docs, query, max_tries=6):
 
 def info_json(chain, info_docs, max_tries=6):
     msg.info("Extracting INFO JSON.", spaced=True)
-    info_query = """Extract the order information like the numbers, dates, and shipping address. Include the quote number too if found.
-    Don't include the total price."""
+    info_query = """Extract the order information like the numbers, dates, and shipping address. Include the quote number too if found."""
     json_query = """\nReturn the text in JSON format. It must be compatible with json.loads."""
     suffix = """\nDon't tell me how to do it, just do it. Don't add any disclaimer."""
     info_query += json_query + suffix
     res = json_response(chain, info_docs, info_query, max_tries)
+    res['json'] = {k:v for k,v in res['json'].items() if 'amount' not in k.lower() and 'total' not in k.lower() and 'price' not in k.lower()}
     msg.good("INFO JSON extracted.", spaced=True)
     return res
 
@@ -487,7 +487,7 @@ def order_json(
     json_query = """\nReturn the text in JSON format. It must be compatible with json.loads."""
     suffix = """\nDon't tell me how to do it, just do it. Don't add any disclaimer."""
     part_query = """Include the part numbers if defined."""
-    query = """Extract the order items with full details and descriptions and prices and total price."""
+    query = """Extract the order items with full details and descriptions and prices. You must include the total price too."""
     if get_parts:
         query += " " + part_query
     query += suffix

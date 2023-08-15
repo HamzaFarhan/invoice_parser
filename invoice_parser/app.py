@@ -2,7 +2,7 @@ from invoice_parser.imports import *
 from invoice_parser.utils import *
 from invoice_parser.core import *
 from fastapi.responses import JSONResponse
-from langchain_ray.remote_utils import handle_input_path
+from langchain_ray.remote_utils import handle_input_path, is_bucket
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query
 
 app = FastAPI(
@@ -19,7 +19,8 @@ def endpoint(path, get_parts=True):
     path = Path(path) / Path(bucket_path).name
     msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
     res = pdf_to_info_order_json(path, llm_chain, get_parts=get_parts, max_tries=1)
-
+    if is_bucket(bucket_path):
+        os.remove(path)
     res_json = {"info": res["info"]["json"], "order": res["order"]["json"]}
     for k, v in res_json.items():
         if len(v) == 0:

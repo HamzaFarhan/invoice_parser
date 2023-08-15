@@ -468,6 +468,7 @@ def info_json(chain, info_docs, max_tries=6):
     info_query += json_query + suffix
     res = json_response(chain, info_docs, info_query, max_tries)
     res['json'] = {k:v for k,v in res['json'].items() if 'amount' not in k.lower() and 'total' not in k.lower() and 'price' not in k.lower()}
+    print(f'\n\nINFO JSON:\n{res["json"]}\n\n')
     msg.good("INFO JSON extracted.", spaced=True)
     return res
 

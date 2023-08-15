@@ -460,9 +460,7 @@ def json_response(chain, docs, query, max_tries=6):
 def info_json(chain, info_docs, max_tries=6):
     msg.info("Extracting INFO JSON.", spaced=True)
     info_query = """Extract the order information like the numbers, dates, shipping address and total amount. Include the quote number too if found."""
-    json_query = (
-        """\nReturn the text in JSON format. It must be compatible with json.loads."""
-    )
+    json_query = """\nReturn the text in JSON format. It must be compatible with json.loads."""
     suffix = """\nDon't tell me how to do it, just do it. Don't add any disclaimer."""
     info_query += json_query + suffix
     res = json_response(chain, info_docs, info_query, max_tries)
@@ -482,9 +480,7 @@ def order_json(
     splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n"], chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
-    json_query = (
-        """\nReturn the text in JSON format. It must be compatible with json.loads."""
-    )
+    json_query = """\nReturn the text in JSON format. It must be compatible with json.loads."""
     suffix = """\nDon't tell me how to do it, just do it. Don't add any disclaimer."""
     part_query = """Include the part numbers if defined."""
     query = """Extract the order items with full details and descriptions and prices."""

@@ -11,6 +11,7 @@ __all__ = ['vline_settings', 'hline_settings', 'line_settings', 'text_settings',
 from .imports import *
 from .utils import *
 
+
 # %% ../nbs/01_core.ipynb 5
 def page0_text(pdf):
     loaded_pdf = PdfReader(pdf)
@@ -43,7 +44,6 @@ def is_invoice_chain(
         output_variables=output_variables,
         verbose=verbose,
     )
-
 
 # %% ../nbs/01_core.ipynb 7
 vline_settings = {
@@ -135,7 +135,6 @@ def get_table_items(table):
     items.append(item)
     return items
 
-
 # %% ../nbs/01_core.ipynb 8
 def row_check(row, target_list, target_thresh=2):
     """
@@ -201,7 +200,6 @@ def find_target_index(data, target_list, target_thresh=2, alt_index=0):
         target_idx = alt_index
     return target_idx
 
-
 # %% ../nbs/01_core.ipynb 9
 def json_str(x):
     x = x[x.find("{") : x.rfind("}") + 1]
@@ -250,6 +248,7 @@ def str_to_json(x, max_try=10):
             tries += 1
     return jstr, json_dict
 
+
 # %% ../nbs/01_core.ipynb 11
 def extract_text(path):
     data = pdfplumber.open(path)
@@ -261,11 +260,13 @@ def extract_text(path):
 def extract_order_docs(
     text,
     header_cols=["item", "description", "price", "quantity", "amount", "total", "qty"],
-    get_parts=False,
+    get_parts=True,
     splitter=None,
     chunk_size=4000,
     chunk_overlap=0,
 ):
+    msg.info("Extracting ORDER docs from PDF.", spaced=True)
+
     if splitter is None:
         splitter = RecursiveCharacterTextSplitter(
             separators=["\n\n"], chunk_size=chunk_size, chunk_overlap=chunk_overlap
@@ -281,9 +282,7 @@ def extract_order_docs(
             if row_check(txt, header_cols, 2):
                 order_text.append(txt)
                 order_metadatas.append({})
-            elif len(txt) < avg_len * 0.75 and not row_check(
-                order_text[-1], header_cols, 2
-            ):
+            elif len(txt) < avg_len * 0.75 and not row_check(order_text[-1], header_cols, 2):
                 desc += " " + txt
             else:
                 if len(desc) > 0:
@@ -309,7 +308,9 @@ def extract_order_docs(
         order_metadatas.append({"desc": desc.strip()})
     order_text.append(text[-1])
     order_metadatas += [{} for _ in range(len(order_text) - len(order_metadatas))]
-    return splitter.create_documents(order_text, metadatas=order_metadatas)
+    docs = splitter.create_documents(order_text, metadatas=order_metadatas)
+    msg.good("ORDER docs extracted.", spaced=True)
+    return docs
 
 
 def info_order_docs(
@@ -318,8 +319,10 @@ def info_order_docs(
     total_cols=["total", "subtotal", "tax"],
     chunk_size=4000,
     chunk_overlap=0,
-    get_parts=False,
+    get_parts=True,
 ):
+    msg.info("Extracting INFO and ORDER docs from PDF.", spaced=True)
+
     splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n"], chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
@@ -344,10 +347,16 @@ def info_order_docs(
         if len(t.strip()) > 0
     ]
     info_text = top_text + bottom_text
+    all_info_text = " ".join(info_text)
+    qns = [x for x in re.findall(r"\d{8}", all_info_text)]
+    if len(qns) > 0:
+        info_text.insert(0, f"QOUTE NUMBER: {qns[0]}")
     info_docs = splitter.create_documents(info_text)
     order_docs = extract_order_docs(
         table_text, header_cols=header_cols, get_parts=get_parts, splitter=splitter
     )
+    msg.good("INFO and ORDER docs extracted.", spaced=True)
+
     return dict(info_docs=info_docs, order_docs=order_docs)
 
 
@@ -357,10 +366,10 @@ def pdf_to_info_order_docs(
     total_cols=["total", "subtotal", "tax"],
     chunk_size=4000,
     chunk_overlap=0,
-    get_parts=False,
+    get_parts=True,
 ):
     text = extract_text(path)
-    return info_order_docs(
+    res = info_order_docs(
         text,
         header_cols=header_cols,
         total_cols=total_cols,
@@ -368,13 +377,15 @@ def pdf_to_info_order_docs(
         chunk_overlap=chunk_overlap,
         get_parts=get_parts,
     )
-
+    return res
 
 # %% ../nbs/01_core.ipynb 14
 def qa_llm_chain(model="meta-llama/Llama-2-7b-chat-hf"):
     token = "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"
     tokenizer = AutoTokenizer.from_pretrained(model, token=token)
-    model = AutoModelForCausalLM.from_pretrained(model,device_map='auto', torch_dtype=torch.float16, token=token)
+    model = AutoModelForCausalLM.from_pretrained(
+        model, device_map="auto", torch_dtype=torch.float16, token=token
+    )
     pipe = pipeline(
         "text-generation",
         model=model,
@@ -391,7 +402,6 @@ def qa_llm_chain(model="meta-llama/Llama-2-7b-chat-hf"):
     )
     llm = HuggingFacePipeline(pipeline=pipe, model_kwargs={"temperature": 0})
     return load_qa_chain(llm, "stuff")
-
 
 # %% ../nbs/01_core.ipynb 16
 def fix_json(text):
@@ -420,6 +430,7 @@ def fix_json(text):
 
 
 def json_response(chain, docs, query, max_tries=6):
+    msg.info("Converting DOCS to JSON.", spaced=True)
     tries = 0
     res = ""
     while res == "" and tries < max_tries:
@@ -430,34 +441,40 @@ def json_response(chain, docs, query, max_tries=6):
     tries = 0
     while tries < max_tries:
         try:
-            return dict(json_str=res, json=json.loads(fix_json(res)))
+            json_res = dict(json_str=res, json=json.loads(fix_json(res)))
+            msg.good("DOCS converted to JSON.", spaced=True)
+            return json_res
         except:
             tries += 1
-
+    msg.fail("Failed to convert DOCS to JSON.", spaced=True)
     return dict(json_str=res, json={})
 
 
 def info_json(chain, info_docs, max_tries=6):
+    msg.info("Extracting INFO JSON.", spaced=True)
     info_query = """Extract the order information like the numbers, dates, shipping address and total amount. Include the quote number too if found."""
     json_query = "\nReturn the text in JSON format. It must be compatible with json.loads."
     suffix = "\nDon't tell me how to do it, just do it. Don't add any disclaimer."
     info_query += json_query + suffix
-    return json_response(chain, info_docs, info_query, max_tries)
+    res = json_response(chain, info_docs, info_query, max_tries)
+    msg.good("INFO JSON extracted.", spaced=True)
+    return res
 
 
 def order_json(
     chain,
     order_docs,
     max_tries=6,
-    get_parts=False,
+    get_parts=True,
     chunk_size=4000,
     chunk_overlap=0,
 ):
+    msg.info("Extracting ORDER JSON.", spaced=True)
     splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n"], chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
     json_query = "\nReturn the text in JSON format. It must be compatible with json.loads."
-    suffix = ("\nDon't tell me how to do it, just do it. Don't add any disclaimer.",)
+    suffix = "\nDon't tell me how to do it, just do it. Don't add any disclaimer."
     part_query = "Include the part numbers if defined."
     query = "Extract the order items with full details and descriptions and prices."
     if get_parts:
@@ -473,10 +490,12 @@ def order_json(
     item_query = item_query.strip()
 
     item_docs = splitter.create_documents([items])
-    return json_response(chain, item_docs, item_query, max_tries=max_tries)
+    res = json_response(chain, item_docs, item_query, max_tries)
+    msg.good("ORDER JSON extracted.", spaced=True)
+    return res
 
 
-def pdf_to_info_order_json(path, chain, max_tries=6, get_parts=False):
+def pdf_to_info_order_json(path, chain, max_tries=6, get_parts=True):
     info_order_dict = pdf_to_info_order_docs(path, get_parts=get_parts)
     info_dict = info_json(
         chain=chain, info_docs=info_order_dict["info_docs"], max_tries=max_tries

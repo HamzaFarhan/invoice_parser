@@ -21,6 +21,7 @@ def po_action(path: str):
     msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
     res = pdf_to_info_order_json(path, llm_chain, get_parts=True)
     res_json = {"info": res["info"]["json"], "order": res["order"]["json"]}
+    res_json["info"] = remove_total_keys(res_json["info"])
     return JSONResponse(content=res_json)
 
 
@@ -32,4 +33,5 @@ def ap_action(path: str):
     msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
     res = pdf_to_info_order_json(path, llm_chain, get_parts=False)
     res_json = {"info": res["info"]["json"], "order": res["order"]["json"]}
+    res_json["info"] = remove_total_keys(res_json["info"])
     return JSONResponse(content=res_json)

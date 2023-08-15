@@ -30,7 +30,7 @@ def endpoint(path, get_parts=True):
 
 
 @app.post("/parse_po")
-def po_action(path: str = Query(..., title="Path to PDF file.")):
+def po_action(path: str = Query(..., description="Path to PDF file.")):
     return endpoint(path, get_parts=True)
     # msg.info(f"Path: {path}", spaced=True)
     # path, bucket_path = handle_input_path(path)
@@ -45,7 +45,7 @@ def po_action(path: str = Query(..., title="Path to PDF file.")):
 
 
 @app.post("/parse_ap")
-def ap_action(path: str = Query(..., title="Path to PDF file.")):
+def ap_action(path: str = Query(..., description="Path to PDF file.")):
     return endpoint(path, get_parts=False)
     # msg.info(f"Path: {path}", spaced=True)
     # path, bucket_path = handle_input_path(path)

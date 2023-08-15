@@ -4,8 +4,8 @@
 __all__ = ['vline_settings', 'hline_settings', 'line_settings', 'text_settings', 'page0_text', 'is_invoice_text', 'is_invoice',
            'is_invoice_chain', 'get_fullest_row', 'num_full_parts', 'get_table_items', 'row_check', 'extract_sub_text',
            'find_target_index', 'json_str', 'str_to_json', 'extract_text', 'extract_order_docs', 'info_order_docs',
-           'pdf_to_info_order_docs', 'qa_llm_chain', 'fix_json', 'json_response', 'remove_total_keys', 'info_json',
-           'order_json', 'pdf_to_info_order_json']
+           'pdf_to_info_order_docs', 'qa_llm_chain', 'fix_json', 'json_response', 'info_json', 'order_json',
+           'pdf_to_info_order_json']
 
 # %% ../nbs/01_core.ipynb 2
 from .imports import *
@@ -459,13 +459,6 @@ def json_response(chain, docs, query, max_tries=6):
     msg.fail("Failed to convert DOCS to JSON.", spaced=True)
     return dict(json_str=res, json={})
 
-def remove_total_keys(data):
-    if isinstance(data, dict):
-        return {k: remove_total_keys(v) for k, v in data.items() if 'amount' not in k.lower() and 'total' not in k.lower() and 'price' not in k.lower()}
-    elif isinstance(data, list):
-        return [remove_total_keys(v) for v in data]
-    else:
-        return data
 
 def info_json(chain, info_docs, max_tries=6):
     msg.info("Extracting INFO JSON.", spaced=True)
@@ -474,7 +467,7 @@ def info_json(chain, info_docs, max_tries=6):
     suffix = """\nDon't tell me how to do it, just do it. Don't add any disclaimer."""
     info_query += json_query + suffix
     res = json_response(chain, info_docs, info_query, max_tries)
-    res['json'] = remove_total_keys(res['json'])
+    res['json'] = {k:v for k,v in res['json'].items() if 'amount' not in k.lower() and 'total' not in k.lower() and 'price' not in k.lower()}
     msg.info(f'INFO JSON:\n{res["json"]}', spaced=True)
     msg.good("INFO JSON extracted.", spaced=True)
     return res

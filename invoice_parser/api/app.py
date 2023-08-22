@@ -1,5 +1,6 @@
 from invoice_parser.api.imports import *
 from invoice_parser.api.utils import *
+from invoice_parser.core import pdf_to_info_order_docs
 
 app = FastAPI(
     title="Wilson Tools Parser",
@@ -23,7 +24,7 @@ class WTIngress:
     def check_health(self):
         msg.info("Checking Health...", spaced=True)
         path = "/opt/demo_files/pdf/wt7.pdf"
-        res = endpoint(path, self.llm_chain, get_parts=True)
+        res = pdf_to_info_order_docs(path, get_parts=True)
         msg.good("Health Check Passed!", spaced=True)
         return res
 

@@ -601,7 +601,7 @@ def pdf_to_info_order_json(path, chain, max_tries=6, get_parts=True):
 
 def pdf_to_data_json(path, chain, max_tries=3, get_parts=True):
     info_order_dict = pdf_to_info_order_docs(path, get_parts=get_parts)
-    info_dict = extract_info_dict(llm_chain, info_order_dict["info_docs"], max_tries=max_tries)
-    order_list = extract_order_list(llm_chain, info_order_dict["order_docs"], get_parts=get_parts, max_tries=max_tries)
-    total_dict = extract_total_dict(llm_chain, info_order_dict["bottom_docs"], max_tries=max_tries*2)
+    info_dict = extract_info_dict(chain, info_order_dict["info_docs"], max_tries=max_tries)
+    order_list = extract_order_list(chain, info_order_dict["order_docs"], get_parts=get_parts, max_tries=max_tries)
+    total_dict = extract_total_dict(chain, info_order_dict["bottom_docs"], max_tries=max_tries*2)
     return {"info": info_dict, "order": order_list, "total": total_dict}

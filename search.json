@@ -1,0 +1,65 @@
+[
+  {
+    "objectID": "utils.html",
+    "href": "utils.html",
+    "title": "Utils",
+    "section": "",
+    "text": "source\n\nload_invoice_model\n\n load_invoice_model (device='cuda:0')\n\n\nsource\n\n\nget_first_non_empty_row\n\n get_first_non_empty_row (table)\n\n\nsource\n\n\nget_first_empty_row\n\n get_first_empty_row (table)\n\n\nsource\n\n\nget_first_full_row\n\n get_first_full_row (table)\n\n\nsource\n\n\nfull_row\n\n full_row (x)\n\n\nsource\n\n\nempty_row\n\n empty_row (x)\n\n\nsource\n\n\nempty_part\n\n empty_part (x)\n\n\nsource\n\n\nrow_check\n\n row_check (row, check=[], any=False)\n\n\nsource\n\n\npart_check\n\n part_check (p, check=[])"
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "Core",
+    "section": "",
+    "text": "source\n\n\n\n is_invoice_chain (model, device=None, input_variables=['pdf'],\n                   output_variables=['is_invoice'], verbose=False)\n\n\nsource\n\n\n\n\n is_invoice (pdf, model, device=None)\n\n\nsource\n\n\n\n\n is_invoice_text (text, model)\n\n\nsource\n\n\n\n\n page0_text (pdf)"
+  },
+  {
+    "objectID": "core.html#is-invoice",
+    "href": "core.html#is-invoice",
+    "title": "Core",
+    "section": "",
+    "text": "source\n\n\n\n is_invoice_chain (model, device=None, input_variables=['pdf'],\n                   output_variables=['is_invoice'], verbose=False)\n\n\nsource\n\n\n\n\n is_invoice (pdf, model, device=None)\n\n\nsource\n\n\n\n\n is_invoice_text (text, model)\n\n\nsource\n\n\n\n\n page0_text (pdf)"
+  },
+  {
+    "objectID": "core.html#parsing",
+    "href": "core.html#parsing",
+    "title": "Core",
+    "section": "Parsing",
+    "text": "Parsing\n\nsource\n\nget_table_items\n\n get_table_items (table)\n\n\nsource\n\n\nnum_full_parts\n\n num_full_parts (row)\n\n\nsource\n\n\nget_fullest_row\n\n get_fullest_row (table)\n\n\nsource\n\n\nfind_target_index\n\n find_target_index (data, target_list, target_thresh=2, alt_index=0)\n\nFinds the index of the row in the given data that contains the target elements.\nParameters: data (list): A list of strings representing the data. target_list (list): A list of strings representing the target elements. target_thresh (int): The minimum number of target elements that must be present in a row.\nReturns: int: The index of the row that contains the target elements. If no such row exists, returns alt_index.\n\nsource\n\n\nextract_sub_text\n\n extract_sub_text (text, top_cols, bottom_cols, top_thresh=2,\n                   bottom_thresh=1, alt_top_index=0, alt_bottom_index=0)\n\nExtracts the text between the top_cols and bottom_cols.\n\nsource\n\n\nrow_check\n\n row_check (row, target_list, target_thresh=2)\n\nChecks if the given row contains the target elements.\nParameters: row (str): A string representing the row to check. target_list (list): A list of strings representing the target elements. target_thresh (int): The minimum number of target elements that must be present in the row.\nReturns: bool: True if the row contains the target elements, False otherwise.\n\nsource\n\n\nstr_to_json\n\n str_to_json (x, max_try=10)\n\n\nsource\n\n\njson_str\n\n json_str (x)"
+  },
+  {
+    "objectID": "core.html#docs",
+    "href": "core.html#docs",
+    "title": "Core",
+    "section": "Docs",
+    "text": "Docs\n\nsource\n\npdf_to_info_order_docs\n\n pdf_to_info_order_docs (path, header_cols=['item', 'description',\n                         'price', 'quantity', 'amount', 'total', 'qty'],\n                         total_cols=['total', 'subtotal', 'tax'],\n                         chunk_size=4000, chunk_overlap=0, get_parts=True)\n\n\nsource\n\n\ninfo_order_docs\n\n info_order_docs (text, header_cols=['item', 'description', 'price',\n                  'quantity', 'amount', 'total', 'qty'],\n                  total_cols=['total', 'subtotal', 'tax'],\n                  chunk_size=4000, chunk_overlap=0, get_parts=True)\n\n\nsource\n\n\nextract_order_docs\n\n extract_order_docs (text, header_cols=['item', 'description', 'price',\n                     'quantity', 'amount', 'total', 'qty'],\n                     get_parts=True, splitter=None, chunk_size=4000,\n                     chunk_overlap=0)\n\n\nsource\n\n\nextract_text\n\n extract_text (path)"
+  },
+  {
+    "objectID": "core.html#llm",
+    "href": "core.html#llm",
+    "title": "Core",
+    "section": "LLM",
+    "text": "LLM\n\n# device = default_device()\n\n# embeddings = SentenceTransformerEmbeddings(\n#     model_name=\"sentence-transformers/all-mpnet-base-v2\",\n#     model_kwargs={\"device\": default_device()},\n# )\n# model = \"tiiuae/falcon-7b\"\n\n\nsource\n\nqa_llm_chain\n\n qa_llm_chain (model='meta-llama/Llama-2-7b-chat-hf')"
+  },
+  {
+    "objectID": "core.html#query",
+    "href": "core.html#query",
+    "title": "Core",
+    "section": "QUERY",
+    "text": "QUERY\n\nsource\n\npdf_to_data_json\n\n pdf_to_data_json (path, chain, max_tries=3, get_parts=True)\n\n\nsource\n\n\npdf_to_info_order_json\n\n pdf_to_info_order_json (path, chain, max_tries=6, get_parts=True)\n\n\nsource\n\n\norder_json\n\n order_json (chain, order_docs, max_tries=6, get_parts=True,\n             chunk_size=4000, chunk_overlap=0)\n\n\nsource\n\n\ninfo_json\n\n info_json (chain, info_docs, max_tries=6)\n\n\nsource\n\n\njson_response\n\n json_response (chain, docs, query, max_tries=6)\n\n\nsource\n\n\nextract_total_dict\n\n extract_total_dict (chain, docs, max_tries=3)\n\n\nsource\n\n\nextract_order_list\n\n extract_order_list (chain, docs, get_parts=True, max_tries=3)\n\n\nsource\n\n\nextract_info_dict\n\n extract_info_dict (chain, docs, max_tries=3)\n\n\nsource\n\n\nextract_data\n\n extract_data (chain, docs, query, format_query='', start='{', end='}',\n               max_tries=3)\n\n\nsource\n\n\norder_res_to_list\n\n order_res_to_list (res)\n\n\nsource\n\n\ninfo_res_to_dict\n\n info_res_to_dict (res)\n\n\nsource\n\n\nline_to_dict\n\n line_to_dict (line)\n\n\nsource\n\n\ncheck_ends\n\n check_ends (res, chain, docs, query, start='{', end='}', max_tries=3)\n\n\nsource\n\n\nfix_json\n\n fix_json (text)"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "invoice_parser",
+    "section": "",
+    "text": "pip install invoice_parser"
+  },
+  {
+    "objectID": "index.html#install",
+    "href": "index.html#install",
+    "title": "invoice_parser",
+    "section": "",
+    "text": "pip install invoice_parser"
+  }
+]

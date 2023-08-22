@@ -1,12 +1,21 @@
 from invoice_parser.api.imports import *
 
 
-def endpoint(path, llm_chain, get_parts=True):
-    msg.info(f"Path: {path}", spaced=True)
+def handle_endpoint_path(path):
     path, bucket_path = handle_input_path(path)
     if is_bucket(bucket_path):
         path = Path(path) / Path(bucket_path).name
     msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
+    return path, bucket_path
+
+
+def endpoint(path, llm_chain, get_parts=True):
+    msg.info(f"Path: {path}", spaced=True)
+    path, bucket_path = handle_endpoint_path(path)
+    # path, bucket_path = handle_input_path(path)
+    # if is_bucket(bucket_path):
+    #     path = Path(path) / Path(bucket_path).name
+    # msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
     res = pdf_to_info_order_json(path, llm_chain, get_parts=get_parts, max_tries=1)
     try:
         if is_bucket(bucket_path):

@@ -24,7 +24,13 @@ class WTIngress:
     def check_health(self):
         msg.info("Checking Health...", spaced=True)
         path = "/opt/demo_files/pdf/wt7.pdf"
+        path, bucket_path = handle_endpoint_path(path)
         res = pdf_to_info_order_docs(path, get_parts=True)
+        try:
+            if is_bucket(bucket_path):
+                os.remove(path)
+        except:
+            pass
         msg.good("Health Check Passed!", spaced=True)
         return res
 

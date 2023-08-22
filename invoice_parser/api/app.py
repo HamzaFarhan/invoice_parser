@@ -1,4 +1,5 @@
 from invoice_parser.api.imports import *
+from invoice_parser.api.utils import *
 
 app = FastAPI(
     title="Wilson Tools Parser",
@@ -19,20 +20,20 @@ class WTIngress:
     def __init__(self):
         self.llm_chain = qa_llm_chain()
 
+    def check_health(self):
+        msg.info("Checking Health...", spaced=True)
+        path = "/opt/demo_files/pdf/wt7.pdf"
+        res = endpoint(path, self.llm_chain, get_parts=True)
+        msg.good("Health Check Passed!", spaced=True)
+        return res
+
     @app.post("/parse_po")
-    def po_action(self, path: str = Field(title="Path to PDF")):
-        msg.info(f"Path: {path}", spaced=True)
-        path, bucket_path = handle_input_path(path)
-        msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
-        res = pdf_to_info_order_json(path, self.llm_chain, get_parts=True)
-        res_json = {"info": res["info"]["json"], "order": res["order"]["json"]}
-        return JSONResponse(content=res_json)
+    def po_action(self, path: str = Query(..., description="Path to PDF file.")):
+        return endpoint(path, self.llm_chain, get_parts=True)
 
     @app.post("/parse_ap")
-    def ap_action(self, path: str = Field(title="Path to PDF")):
-        msg.info(f"Path: {path}", spaced=True)
-        path, bucket_path = handle_input_path(path)
-        msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
-        res = pdf_to_info_order_json(path, self.llm_chain, get_parts=False)
-        res_json = {"info": res["info"]["json"], "order": res["order"]["json"]}
-        return JSONResponse(content=res_json)
+    def ap_action(self, path: str = Query(..., description="Path to PDF file.")):
+        return endpoint(path, self.llm_chain, get_parts=False)
+
+
+deployment_handle = WTIngress.bind()

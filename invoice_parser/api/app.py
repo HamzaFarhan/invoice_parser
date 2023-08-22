@@ -11,9 +11,9 @@ app = FastAPI(
     autoscaling_config=dict(
         min_replicas=1, max_replicas=1, target_num_ongoing_requests_per_replica=1
     ),
-    ray_actor_options=dict(num_cpus=6, num_gpus=0.8),
+    ray_actor_options=dict(num_cpus=10, num_gpus=1.0),
     health_check_period_s=10,
-    health_check_timeout_s=30,
+    health_check_timeout_s=60,
 )
 @serve.ingress(app)
 class WTIngress:

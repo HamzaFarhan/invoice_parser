@@ -4,7 +4,8 @@
 __all__ = ['vline_settings', 'hline_settings', 'line_settings', 'text_settings', 'page0_text', 'is_invoice_text', 'is_invoice',
            'is_invoice_chain', 'get_fullest_row', 'num_full_parts', 'get_table_items', 'row_check', 'extract_sub_text',
            'find_target_index', 'json_str', 'str_to_json', 'extract_text', 'extract_order_docs', 'info_order_docs',
-           'pdf_to_info_order_docs', 'qa_llm_chain', 'fix_json', 'json_response', 'info_json', 'order_json',
+           'pdf_to_info_order_docs', 'qa_llm_chain', 'fix_json', 'check_ends', 'res_to_dict', 'extract_data',
+           'extract_info_dict', 'extract_order_dict', 'extract_total_dict', 'json_response', 'info_json', 'order_json',
            'pdf_to_info_order_json']
 
 # %% ../nbs/01_core.ipynb 2
@@ -433,6 +434,51 @@ def fix_json(text):
     json_str = json_str.replace('""', '","')
     return json_str
 
+def check_ends(chain, docs, query, start="{", end="}", max_tries=3):
+    tries = 0
+    res = ""
+    while res == "" and tries < max_tries:
+        msg.info(f"Tries: {tries}", spaced=True)
+        res = chain(dict(input_documents=docs, question=query))
+        res = res["output_text"].strip()
+        res = res[res.find(start) : res.rfind(end) + 1]
+        tries += 1
+    return res
+
+def res_to_dict(res):
+    print(res)
+    res_dict = {}
+    for line in res.splitlines():
+        line = line[line.find("{")+1 : line.rfind("}")]
+        k = line.split(":")[0].strip()
+        v = ":".join(line.split(":")[1:]).strip()
+        res_dict[k] = v
+    return res_dict
+
+def extract_data(chain, docs, query, format_query='', start="{", end="}", max_tries=3):
+    # info_query = "You are a data extractor. Extract the order information like the numbers, dates, and shipping address. Include the quote number too if found."
+    if format_query == '':
+        format_query = "\nReturn the text in the format: {key: value}."
+    suffix = "\nDon't tell me how to do it, just do it. Don't add any disclaimer."
+    query += format_query+suffix
+    res = check_ends(chain, docs, query.strip(), start=start, end=end, max_tries=max_tries)
+    return res_to_dict(res)
+
+def extract_info_dict(chain, docs, max_tries=3):
+    info_query = "You are a data extractor. Extract the order information like the numbers, dates, and shipping address. Include the quote number too if found."
+    return extract_data(chain, docs, info_query, max_tries=max_tries)
+
+def extract_order_dict(chain, docs, get_parts=True, max_tries=3):
+    order_query = "You are a data extractor. Extract the order items with full details and descriptions and prices."
+    part_query = "Include the part numbers if defined."
+    if get_parts:
+        order_query += " " + part_query
+    format_query = "\nReturn the text in the format: [{key: value}]."
+    return extract_data(chain, docs, order_query, format_query=format_query, start="[", end="]", max_tries=max_tries)
+
+def extract_total_dict(chain, docs, max_tries=3):
+    total_query = "You are a data extractor. Extract the total price."
+    return extract_data(chain, docs, total_query, max_tries=max_tries)
 
 def json_response(chain, docs, query, max_tries=6):
     msg.info("Converting DOCS to JSON.", spaced=True)
@@ -462,9 +508,9 @@ def json_response(chain, docs, query, max_tries=6):
 
 def info_json(chain, info_docs, max_tries=6):
     msg.info("Extracting INFO JSON.", spaced=True)
-    info_query = """Extract the order information like the numbers, dates, and shipping address. Include the quote number too if found."""
-    json_query = """\nReturn the text in JSON format. It must be compatible with json.loads."""
-    suffix = """\nDon't tell me how to do it, just do it. Don't add any disclaimer."""
+    info_query = "You are a data extractor. Extract the order information like the numbers, dates, and shipping address. Include the quote number too if found."
+    json_query = "\nReturn the text in JSON format. It must be compatible with json.loads."
+    suffix = "\nDon't tell me how to do it, just do it. Don't add any disclaimer."
     info_query += json_query + suffix
     res = json_response(chain, info_docs, info_query, max_tries)
     res['json'] = {k:v for k,v in res['json'].items() if 'amount' not in k.lower() and 'total' not in k.lower() and 'price' not in k.lower()}
@@ -485,10 +531,10 @@ def order_json(
     splitter = RecursiveCharacterTextSplitter(
         separators=["\n\n"], chunk_size=chunk_size, chunk_overlap=chunk_overlap
     )
-    json_query = """\nReturn the text in JSON format. It must be compatible with json.loads."""
-    suffix = """\nDon't tell me how to do it, just do it. Don't add any disclaimer."""
-    part_query = """Include the part numbers if defined."""
-    query = """Extract the order items with full details and descriptions and prices. You must include the total price too."""
+    json_query = "\nReturn the text in JSON format. It must be compatible with json.loads."
+    suffix = "\nDon't tell me how to do it, just do it. Don't add any disclaimer."
+    part_query = "Include the part numbers if defined."
+    query = "You are a data extractor. Extract the order items with full details and descriptions and prices. You must include the total price too."
     if get_parts:
         query += " " + part_query
     query += suffix

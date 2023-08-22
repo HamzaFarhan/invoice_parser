@@ -4,9 +4,9 @@
 __all__ = ['vline_settings', 'hline_settings', 'line_settings', 'text_settings', 'page0_text', 'is_invoice_text', 'is_invoice',
            'is_invoice_chain', 'get_fullest_row', 'num_full_parts', 'get_table_items', 'row_check', 'extract_sub_text',
            'find_target_index', 'json_str', 'str_to_json', 'extract_text', 'extract_order_docs', 'info_order_docs',
-           'pdf_to_info_order_docs', 'qa_llm_chain', 'fix_json', 'check_ends', 'res_to_dict', 'extract_data',
-           'extract_info_dict', 'extract_order_dict', 'extract_total_dict', 'json_response', 'info_json', 'order_json',
-           'pdf_to_info_order_json']
+           'pdf_to_info_order_docs', 'qa_llm_chain', 'fix_json', 'check_ends', 'line_to_dict', 'info_res_to_dict',
+           'order_res_to_list', 'extract_data', 'extract_info_dict', 'extract_order_list', 'extract_total_dict',
+           'json_response', 'info_json', 'order_json', 'pdf_to_info_order_json', 'pdf_to_data_json']
 
 # %% ../nbs/01_core.ipynb 2
 from .imports import *
@@ -172,7 +172,7 @@ def extract_sub_text(
     bottom_idx = find_target_index(
         text[::-1], bottom_cols, target_thresh=bottom_thresh, alt_index=alt_bottom_index
     )
-    bottom_idx = len(text) - bottom_idx
+    bottom_idx = len(text) - bottom_idx - 1
     return (
         [t for t in text[top_idx : bottom_idx + 1] if len(t.strip()) > 0],
         top_idx,
@@ -359,9 +359,10 @@ def info_order_docs(
     order_docs = extract_order_docs(
         table_text, header_cols=header_cols, get_parts=get_parts, splitter=splitter
     )
+    bottom_docs = splitter.create_documents(bottom_text[:1])
     msg.good("INFO and ORDER docs extracted.", spaced=True)
 
-    return dict(info_docs=info_docs, order_docs=order_docs)
+    return dict(info_docs=info_docs, order_docs=order_docs, bottom_docs=bottom_docs)
 
 
 def pdf_to_info_order_docs(
@@ -434,9 +435,12 @@ def fix_json(text):
     json_str = json_str.replace('""', '","')
     return json_str
 
-def check_ends(chain, docs, query, start="{", end="}", max_tries=3):
+def check_ends(res, chain, docs, query, start="{", end="}", max_tries=3):
     tries = 0
-    res = ""
+    if res is None or res == "":
+        res = ""
+    else:
+        res = res[res.find(start) : res.rfind(end) + 1]
     while res == "" and tries < max_tries:
         msg.info(f"Tries: {tries}", spaced=True)
         res = chain(dict(input_documents=docs, question=query))
@@ -445,15 +449,37 @@ def check_ends(chain, docs, query, start="{", end="}", max_tries=3):
         tries += 1
     return res
 
-def res_to_dict(res):
-    print(res)
+def line_to_dict(line):
+    line_find = line[line.find("{")+1 : line.rfind("}")]
+    if len(line_find) == 0:
+        line = line.replace('{','').replace("}",'')
+    else:
+        line = line_find
+    k = line.split(":")[0].strip()
+    v = ":".join(line.split(":")[1:]).strip()
+    return {k: v} if len(k) > 0 and len(v) > 0 else {}
+
+def info_res_to_dict(res):
     res_dict = {}
     for line in res.splitlines():
-        line = line[line.find("{")+1 : line.rfind("}")]
-        k = line.split(":")[0].strip()
-        v = ":".join(line.split(":")[1:]).strip()
-        res_dict[k] = v
+        res_dict.update(line_to_dict(line))
+        # line = line[line.find("{")+1 : line.rfind("}")]
+        # k = line.split(":")[0].strip()
+        # v = ":".join(line.split(":")[1:]).strip()
+        # res_dict[k] = v
     return res_dict
+
+def order_res_to_list(res):
+    sep = "} {"
+    res = [[x for x in r.strip().split(sep) if len(x.strip()) > 0] for r in res.splitlines() if len(r.strip()) > 0]
+    order_list = []
+    for r in res:
+        order_dict = {}
+        for x in r:
+            order_dict.update(line_to_dict(x))
+        if len(order_dict) > 0:
+            order_list.append(order_dict)
+    return order_list
 
 def extract_data(chain, docs, query, format_query='', start="{", end="}", max_tries=3):
     # info_query = "You are a data extractor. Extract the order information like the numbers, dates, and shipping address. Include the quote number too if found."
@@ -461,24 +487,31 @@ def extract_data(chain, docs, query, format_query='', start="{", end="}", max_tr
         format_query = "\nReturn the text in the format: {key: value}."
     suffix = "\nDon't tell me how to do it, just do it. Don't add any disclaimer."
     query += format_query+suffix
-    res = check_ends(chain, docs, query.strip(), start=start, end=end, max_tries=max_tries)
-    return res_to_dict(res)
+    query = query.strip()
+    res = chain(dict(input_documents=docs, question=query))['output_text']
+    res = res.replace("{key: value}", '').strip()
+    pprint(res)
+    res = check_ends(res, chain, docs, query, start=start, end=end, max_tries=max_tries)
+    return res
 
 def extract_info_dict(chain, docs, max_tries=3):
     info_query = "You are a data extractor. Extract the order information like the numbers, dates, and shipping address. Include the quote number too if found."
-    return extract_data(chain, docs, info_query, max_tries=max_tries)
+    res = extract_data(chain, docs, info_query, max_tries=max_tries)
+    return info_res_to_dict(res)
 
-def extract_order_dict(chain, docs, get_parts=True, max_tries=3):
+def extract_order_list(chain, docs, get_parts=True, max_tries=3):
     order_query = "You are a data extractor. Extract the order items with full details and descriptions and prices."
     part_query = "Include the part numbers if defined."
     if get_parts:
         order_query += " " + part_query
-    format_query = "\nReturn the text in the format: [{key: value}]."
-    return extract_data(chain, docs, order_query, format_query=format_query, start="[", end="]", max_tries=max_tries)
+    format_query = "\nFor each item, return the columns in the format: {key: value}."
+    res = extract_data(chain, docs, order_query, format_query=format_query, max_tries=max_tries)
+    return order_res_to_list(res)
 
 def extract_total_dict(chain, docs, max_tries=3):
     total_query = "You are a data extractor. Extract the total price."
-    return extract_data(chain, docs, total_query, max_tries=max_tries)
+    res = extract_data(chain, docs, total_query, max_tries=max_tries)
+    return info_res_to_dict(res)
 
 def json_response(chain, docs, query, max_tries=6):
     msg.info("Converting DOCS to JSON.", spaced=True)
@@ -533,7 +566,7 @@ def order_json(
     )
     json_query = "\nReturn the text in JSON format. It must be compatible with json.loads."
     suffix = "\nDon't tell me how to do it, just do it. Don't add any disclaimer."
-    part_query = "Include the part numbers if defined."
+    part_query = "Include the part numbers only if explicitly defined."
     query = "You are a data extractor. Extract the order items with full details and descriptions and prices. You must include the total price too."
     if get_parts:
         query += " " + part_query
@@ -565,3 +598,10 @@ def pdf_to_info_order_json(path, chain, max_tries=6, get_parts=True):
         get_parts=get_parts,
     )
     return {"info": info_dict, "order": order_dict}
+
+def pdf_to_data_json(path, chain, max_tries=3, get_parts=True):
+    info_order_dict = pdf_to_info_order_docs(path, get_parts=get_parts)
+    info_dict = extract_info_dict(llm_chain, info_order_dict["info_docs"], max_tries=max_tries)
+    order_list = extract_order_list(llm_chain, info_order_dict["order_docs"], get_parts=get_parts, max_tries=max_tries)
+    total_dict = extract_total_dict(llm_chain, info_order_dict["bottom_docs"], max_tries=max_tries*2)
+    return {"info": info_dict, "order": order_list, "total": total_dict}

@@ -16,13 +16,14 @@ def endpoint(path, llm_chain, get_parts=True):
     # if is_bucket(bucket_path):
     #     path = Path(path) / Path(bucket_path).name
     # msg.info(f"Received path: {bucket_path}, Local Path: {path}", spaced=True)
-    res = pdf_to_info_order_json(path, llm_chain, get_parts=get_parts, max_tries=1)
+    res_json = pdf_to_data_json(path, llm_chain, max_tries=2, get_parts=get_parts)
+    # res = pdf_to_info_order_json(path, llm_chain, get_parts=get_parts, max_tries=1)
     try:
         if is_bucket(bucket_path):
             os.remove(path)
     except:
         pass
-    res_json = {"info": res["info"]["json"], "order": res["order"]["json"]}
+    # res_json = {"info": res["info"]["json"], "order": res["order"]["json"]}
     for k, v in res_json.items():
         if len(v) == 0:
             raise HTTPException(

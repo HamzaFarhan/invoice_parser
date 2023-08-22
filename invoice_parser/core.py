@@ -489,6 +489,7 @@ def extract_data(chain, docs, query, format_query='', start="{", end="}", max_tr
     query += format_query+suffix
     query = query.strip()
     res = chain(dict(input_documents=docs, question=query))['output_text']
+    res = res.replace('""', '"')
     res = res.replace("{key: value}", '').strip()
     pprint(res)
     res = check_ends(res, chain, docs, query, start=start, end=end, max_tries=max_tries)
